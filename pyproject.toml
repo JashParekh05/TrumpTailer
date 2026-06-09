@@ -1,0 +1,36 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "trumptailer"
+version = "0.1.0"
+description = "Event-driven quant research engine: do Trump's Truth Social posts create short-lived tradeable edge, and does it survive costs?"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pyarrow>=14",
+    "pyyaml>=6",
+    "requests>=2.31",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+nlp = [
+    "transformers>=4.40",
+    "sentence-transformers>=2.7",
+    "torch>=2.2",
+]
+prices = ["yfinance>=0.2.40"]
+dev = ["pytest>=8"]
+
+[tool.scikit-build]
+minimum-version = "0.10"
+cmake.version = ">=3.26"
+wheel.packages = ["python/trumptailer"]
+build-dir = "build/{wheel_tag}"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

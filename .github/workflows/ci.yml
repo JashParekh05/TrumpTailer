@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package (builds C++ core)
+        run: pip install -e .[dev]
+
+      - name: Python tests
+        run: pytest -q
+
+      - name: C++ tests
+        run: |
+          pip install pybind11
+          cmake -S . -B build/tests -DTT_BUILD_TESTS=ON
+          cmake --build build/tests -j
+          ctest --test-dir build/tests --output-on-failure
