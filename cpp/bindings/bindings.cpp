@@ -4,10 +4,13 @@
 
 #include <stdexcept>
 
+#include "tt/backtester.hpp"
 #include "tt/bar_store.hpp"
 #include "tt/clock.hpp"
+#include "tt/costs.hpp"
 #include "tt/event.hpp"
 #include "tt/event_study.hpp"
+#include "tt/metrics.hpp"
 #include "tt/version.hpp"
 
 namespace py = pybind11;
@@ -127,4 +130,67 @@ PYBIND11_MODULE(_tt_core, m) {
     m.def("event_study", &EventStudy::run, py::arg("symbols"), py::arg("event_bar_idx"),
           py::arg("store"), py::arg("benchmark"), py::arg("config"),
           "Market-model event study: AR/CAR/CAAR with cross-sectional t-stats.");
+
+    // --- P4: costs, backtester, metrics ---
+    py::class_<LinearCostModel>(m, "LinearCostModel")
+        .def(py::init([](double hs, double comm, double imp, double adv) {
+                 return LinearCostModel{hs, comm, imp, adv};
+             }),
+             py::arg("half_spread_bps") = 1.0, py::arg("commission_bps") = 0.5,
+             py::arg("impact_bps") = 0.0, py::arg("adv_notional") = 1e9)
+        .def_readwrite("half_spread_bps", &LinearCostModel::half_spread_bps)
+        .def_readwrite("commission_bps", &LinearCostModel::commission_bps)
+        .def_readwrite("impact_bps", &LinearCostModel::impact_bps)
+        .def_readwrite("adv_notional", &LinearCostModel::adv_notional)
+        .def("cost_bps", &LinearCostModel::cost_bps, py::arg("notional"));
+
+    py::class_<BacktestConfig>(m, "BacktestConfig")
+        .def(py::init([](int hold, int lat, LinearCostModel c) {
+                 return BacktestConfig{hold, lat, c};
+             }),
+             py::arg("holding_bars") = 3, py::arg("latency_bars") = 0,
+             py::arg("costs") = LinearCostModel{})
+        .def_readwrite("holding_bars", &BacktestConfig::holding_bars)
+        .def_readwrite("latency_bars", &BacktestConfig::latency_bars)
+        .def_readwrite("costs", &BacktestConfig::costs);
+
+    py::class_<Trade>(m, "Trade")
+        .def_readonly("symbol", &Trade::symbol)
+        .def_readonly("entry_ts", &Trade::entry_ts)
+        .def_readonly("exit_ts", &Trade::exit_ts)
+        .def_readonly("entry_px", &Trade::entry_px)
+        .def_readonly("exit_px", &Trade::exit_px)
+        .def_readonly("direction", &Trade::direction)
+        .def_readonly("gross_ret", &Trade::gross_ret)
+        .def_readonly("net_ret", &Trade::net_ret)
+        .def_readonly("cost", &Trade::cost);
+
+    py::class_<BacktestResult>(m, "BacktestResult")
+        .def_readonly("trades", &BacktestResult::trades)
+        .def_readonly("equity", &BacktestResult::equity)
+        .def_readonly("gross_returns", &BacktestResult::gross_returns)
+        .def_readonly("net_returns", &BacktestResult::net_returns)
+        .def_readonly("gross_sharpe", &BacktestResult::gross_sharpe)
+        .def_readonly("net_sharpe", &BacktestResult::net_sharpe)
+        .def_readonly("total_net_return", &BacktestResult::total_net_return)
+        .def_readonly("max_drawdown", &BacktestResult::max_drawdown)
+        .def_readonly("hit_rate", &BacktestResult::hit_rate)
+        .def_readonly("profit_factor", &BacktestResult::profit_factor)
+        .def_readonly("n", &BacktestResult::n);
+
+    m.def("backtest", &EventDrivenBacktester::run, py::arg("symbols"),
+          py::arg("event_bar_idx"), py::arg("scores"), py::arg("store"), py::arg("config"),
+          "Event-driven per-trade backtest, net of round-trip costs.");
+
+    m.def("sharpe", &sharpe, py::arg("returns"));
+    m.def("annualized_sharpe", &annualized_sharpe, py::arg("returns"), py::arg("periods_per_year"));
+    m.def("max_drawdown", &max_drawdown, py::arg("equity"));
+    m.def("normal_cdf", &normal_cdf, py::arg("x"));
+    m.def("normal_ppf", &normal_ppf, py::arg("p"));
+    m.def("probabilistic_sharpe", &probabilistic_sharpe, py::arg("returns"),
+          py::arg("sr_benchmark") = 0.0);
+    m.def("expected_max_sharpe", &expected_max_sharpe, py::arg("n_trials"),
+          py::arg("var_sr_trials"));
+    m.def("deflated_sharpe", &deflated_sharpe, py::arg("returns"), py::arg("n_trials"),
+          py::arg("var_sr_trials"));
 }

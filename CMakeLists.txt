@@ -12,6 +12,8 @@ add_library(tt_core STATIC
     cpp/src/clock.cpp
     cpp/src/bar_store.cpp
     cpp/src/event_study.cpp
+    cpp/src/metrics.cpp
+    cpp/src/backtester.cpp
 )
 target_include_directories(tt_core PUBLIC cpp/include)
 target_compile_options(tt_core PRIVATE -Wall -Wextra)
@@ -52,6 +54,8 @@ if(TT_BUILD_TESTS)
         cpp/tests/test_smoke.cpp
         cpp/tests/test_clock_pit.cpp
         cpp/tests/test_event_study.cpp
+        cpp/tests/test_metrics.cpp
+        cpp/tests/test_backtester.cpp
     )
     target_link_libraries(tt_tests PRIVATE tt_core Catch2::Catch2WithMain)
 
