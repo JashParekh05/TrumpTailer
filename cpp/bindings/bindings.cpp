@@ -11,6 +11,7 @@
 #include "tt/event.hpp"
 #include "tt/event_study.hpp"
 #include "tt/metrics.hpp"
+#include "tt/sizing.hpp"
 #include "tt/version.hpp"
 
 namespace py = pybind11;
@@ -96,7 +97,17 @@ PYBIND11_MODULE(_tt_core, m) {
         .def("bar_asof", &BarStore::bar_asof, py::arg("symbol"), py::arg("ts"))
         .def("index_asof", &BarStore::index_asof, py::arg("symbol"), py::arg("ts"))
         .def("has_symbol", &BarStore::has_symbol, py::arg("symbol"))
-        .def("symbols", &BarStore::symbols);
+        .def("symbols", &BarStore::symbols)
+        .def(
+            "close_series",
+            [](const BarStore& s, const std::string& sym) {
+                const auto& b = s.bars(sym);
+                py::array_t<double> out(static_cast<py::ssize_t>(b.size()));
+                auto r = out.mutable_unchecked<1>();
+                for (std::size_t i = 0; i < b.size(); ++i) r(i) = b[i].close;
+                return out;
+            },
+            py::arg("symbol"), "Close prices as a numpy array (for trailing-vol sizing).");
 
     py::class_<TradingCalendar>(m, "TradingCalendar")
         .def(py::init<>())
@@ -193,4 +204,15 @@ PYBIND11_MODULE(_tt_core, m) {
           py::arg("var_sr_trials"));
     m.def("deflated_sharpe", &deflated_sharpe, py::arg("returns"), py::arg("n_trials"),
           py::arg("var_sr_trials"));
+
+    // --- P5: sizing & risk ---
+    m.def("kelly_fraction", &kelly_fraction, py::arg("p"), py::arg("b"));
+    m.def("kelly_gaussian", &kelly_gaussian, py::arg("mu"), py::arg("var"));
+    m.def("fractional_kelly", &fractional_kelly, py::arg("f_star"), py::arg("lambda_"),
+          py::arg("cap"));
+    m.def("vol_target_weight", &vol_target_weight, py::arg("sigma_target"),
+          py::arg("sigma_hat"), py::arg("cap"));
+    m.def("portfolio_volatility", &portfolio_volatility, py::arg("weights"), py::arg("cov"));
+    m.def("sized_equity", &sized_equity, py::arg("returns"), py::arg("sizes"),
+          py::arg("max_dd_stop") = 0.0);
 }
