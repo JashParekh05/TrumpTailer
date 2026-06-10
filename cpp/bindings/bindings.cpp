@@ -7,6 +7,7 @@
 #include "tt/bar_store.hpp"
 #include "tt/clock.hpp"
 #include "tt/event.hpp"
+#include "tt/event_study.hpp"
 #include "tt/version.hpp"
 
 namespace py = pybind11;
@@ -100,4 +101,30 @@ PYBIND11_MODULE(_tt_core, m) {
         .def("actionable_time", &TradingCalendar::actionable_time, py::arg("ts_utc_ns"))
         .def("next_open_after", &TradingCalendar::next_open_after, py::arg("ts_utc_ns"))
         .def("session_close", &TradingCalendar::session_close, py::arg("ts_utc_ns"));
+
+    py::class_<EventStudyConfig>(m, "EventStudyConfig")
+        .def(py::init<>())
+        .def(py::init([](int es, int ee, int cs, int ce) {
+                 return EventStudyConfig{es, ee, cs, ce};
+             }),
+             py::arg("est_start") = -120, py::arg("est_end") = -20,
+             py::arg("car_start") = 0, py::arg("car_end") = 5)
+        .def_readwrite("est_start", &EventStudyConfig::est_start)
+        .def_readwrite("est_end", &EventStudyConfig::est_end)
+        .def_readwrite("car_start", &EventStudyConfig::car_start)
+        .def_readwrite("car_end", &EventStudyConfig::car_end);
+
+    py::class_<EventStudyResult>(m, "EventStudyResult")
+        .def_readonly("offsets", &EventStudyResult::offsets)
+        .def_readonly("aar", &EventStudyResult::aar)
+        .def_readonly("caar", &EventStudyResult::caar)
+        .def_readonly("t_aar", &EventStudyResult::t_aar)
+        .def_readonly("car_per_event", &EventStudyResult::car_per_event)
+        .def_readonly("caar_total", &EventStudyResult::caar_total)
+        .def_readonly("t_caar", &EventStudyResult::t_caar)
+        .def_readonly("n", &EventStudyResult::n);
+
+    m.def("event_study", &EventStudy::run, py::arg("symbols"), py::arg("event_bar_idx"),
+          py::arg("store"), py::arg("benchmark"), py::arg("config"),
+          "Market-model event study: AR/CAR/CAAR with cross-sectional t-stats.");
 }

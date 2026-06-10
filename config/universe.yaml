@@ -1,0 +1,20 @@
+# Tradeable universe for the event study / backtest.
+# Benchmark drives the market model; sectors map event topics to instruments.
+benchmark: SPY
+
+instruments:
+  - SPY    # broad market
+  - QQQ    # tech-heavy
+  - XLK    # tech sector
+  - XLE    # energy
+  - XLF    # financials
+  - XLY    # consumer discretionary
+  - AAPL   # China-exposed mega-cap (tariff-sensitive)
+  - NVDA
+  - TSLA
+
+# Coarse topic -> instrument routing (refined by the classifier in P3).
+sector_map:
+  TariffTrade: [SPY, AAPL, NVDA, XLK, XLY]
+  FedRates: [SPY, XLF, QQQ]
+  Geopolitical: [SPY, XLE]

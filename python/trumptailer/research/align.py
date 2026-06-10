@@ -34,3 +34,22 @@ def align_posts(posts: pd.DataFrame, calendar) -> pd.DataFrame:
 def session_histogram(aligned: pd.DataFrame) -> pd.Series:
     """Count posts by session type (the P1 sanity check)."""
     return aligned["session_type"].value_counts()
+
+
+def event_bar_index(store, symbol: str, actionable_ts_ns: int) -> int:
+    """The tau=0 bar for an event: the first bar completing at/after entry.
+
+    Bars are stamped at their session close and entry is the next open, so the
+    as-of bar is the prior close; the event day's bar is the next one (+1).
+    """
+    return store.index_asof(symbol, int(actionable_ts_ns)) + 1
+
+
+def build_event_locations(aligned: pd.DataFrame, store, symbol_col: str = "instrument"):
+    """Map aligned events to (symbols, tau=0 bar indices) for EventStudy.run."""
+    symbols = aligned[symbol_col].tolist()
+    indices = [
+        event_bar_index(store, s, ts)
+        for s, ts in zip(symbols, aligned["actionable_ts_ns"])
+    ]
+    return symbols, indices
