@@ -9,9 +9,13 @@ option(TT_BUILD_TESTS "Build C++ unit tests" OFF)
 # Core library: pure compute, no Python dependency.
 add_library(tt_core STATIC
     cpp/src/placeholder.cpp
+    cpp/src/clock.cpp
+    cpp/src/bar_store.cpp
 )
 target_include_directories(tt_core PUBLIC cpp/include)
 target_compile_options(tt_core PRIVATE -Wall -Wextra)
+# Linked into the pybind11 shared module, so it must be position-independent.
+set_target_properties(tt_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Python bindings (skipped in standalone test builds without Python dev headers).
 find_package(Python COMPONENTS Interpreter Development.Module QUIET)
@@ -45,6 +49,7 @@ if(TT_BUILD_TESTS)
 
     add_executable(tt_tests
         cpp/tests/test_smoke.cpp
+        cpp/tests/test_clock_pit.cpp
     )
     target_link_libraries(tt_tests PRIVATE tt_core Catch2::Catch2WithMain)
 
