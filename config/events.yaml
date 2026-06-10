@@ -1,0 +1,13 @@
+# Event taxonomy + direction lexicon for the P3 classifier.
+# Keyword seeds are intentionally transparent/auditable (substring match,
+# case-insensitive). The optional FinBERT backend refines direction only.
+
+categories:
+  TariffTrade: [tariff, tariffs, trade deficit, china, import, liberation day, trade war, reciprocal]
+  FedRates: [fed, powell, interest rate, rate cut, rate hike, fomc, federal reserve, basis points]
+  Geopolitical: [war, sanction, nato, russia, ukraine, iran, israel, military, missile, troops]
+
+# Coarse market-impact lexicon (for US equities). Overlaps are fine.
+direction:
+  bullish: [cut rates, rate cut, lower rates, strong, record, great, boom, deal, growth, historic, tremendous, win, surge, back, booming]
+  bearish: [tariff, tariffs, hostile, sanction, ban, crash, weak, threat, retaliate, retaliation, raise rates, rate hike, too late, recession, penalty, war]
